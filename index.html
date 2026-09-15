@@ -1,0 +1,1283 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Puissances de 10 — Multiplication et division</title>
+<style>
+  :root{
+    --bg:#1c1b34;
+    --panel:rgba(255,255,255,.96);
+    --text:#1f2440;
+    --muted:#677189;
+    --border:#cfd6e4;
+    --accent:#6d5efc;
+    --accent-2:#20c7b6;
+    --accent-soft:#f1efff;
+    --comma:#ff9f1c;
+    --comma-soft:#fff4de;
+    --ok:#118a62;
+    --bad:#d54457;
+  }
+  *{box-sizing:border-box}
+  body{
+    margin:0; min-height:100vh; position:relative; overflow-x:hidden;
+    font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+    background:
+      radial-gradient(circle at 12% 18%, rgba(109,94,252,.32), transparent 18%),
+      radial-gradient(circle at 88% 15%, rgba(32,199,182,.22), transparent 16%),
+      radial-gradient(circle at 50% 100%, rgba(255,159,28,.15), transparent 24%),
+      linear-gradient(135deg, #18172c 0%, #232247 48%, #163146 100%);
+    color:var(--text);
+    display:flex; align-items:flex-start; justify-content:center;
+    padding:14px 16px;
+  }
+  body::before{
+    content:""; position:fixed; inset:0; pointer-events:none;
+    background:
+      linear-gradient(rgba(255,255,255,.04) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255,255,255,.04) 1px, transparent 1px);
+    background-size:26px 26px;
+    mask-image:linear-gradient(to bottom, rgba(0,0,0,.55), rgba(0,0,0,.1));
+  }
+  .app{
+    width:min(1360px,100%); background:var(--panel);
+    border:1px solid rgba(255,255,255,.35); border-radius:28px;
+    box-shadow:0 24px 60px rgba(7,10,28,.32); overflow:hidden;
+    backdrop-filter:blur(10px);
+  }
+  header{
+    padding:13px 24px 11px; border-bottom:1px solid #edf0f5;
+    background:linear-gradient(135deg, rgba(109,94,252,.10), rgba(32,199,182,.08));
+    display:flex; justify-content:space-between; gap:16px; align-items:center; flex-wrap:wrap;
+  }
+  .header-left,.header-right{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+  h1{
+    margin:0;font-size:clamp(1.25rem,2vw,1.7rem);
+    color:#29206e; letter-spacing:.01em;
+  }
+  .progress{color:var(--muted);font-weight:750}
+  main{padding:16px 24px 14px}
+  button{
+    appearance:none; border:0; border-radius:12px; min-height:48px;
+    padding:12px 20px; font-size:1rem; font-weight:800; cursor:pointer;
+    transition:.15s ease; touch-action:manipulation; -webkit-tap-highlight-color:transparent;
+  }
+  button:hover{transform:translateY(-1px)}
+  button:disabled{cursor:not-allowed;opacity:.45;transform:none}
+  .primary{
+    background:linear-gradient(135deg, #7a5cff, #4f46e5);
+    color:#fff; box-shadow:0 8px 18px rgba(79,70,229,.24);
+  }
+  .secondary{
+    background:linear-gradient(135deg, #f4f6fb, #e8edf8);
+    color:#354052; border:1px solid #dde4f1;
+  }
+  .success{
+    background:linear-gradient(135deg, #12a370, #118a62);
+    color:#fff; box-shadow:0 8px 18px rgba(17,138,98,.20);
+  }
+  .menu-btn{
+    min-height:38px;padding:7px 13px;
+    background:linear-gradient(135deg, #eef2ff, #e7fbf8);
+    color:#354052;font-size:.9rem;border:1px solid #dbe2f4;
+  }
+
+  /* Menu */
+  .menu-screen{padding:20px 8px 28px}
+  .menu-title{text-align:center;margin:2px 0 5px;font-size:clamp(1.8rem,4vw,2.7rem)}
+  .menu-subtitle{text-align:center;color:var(--muted);font-weight:650;margin:0 auto 24px;max-width:650px}
+  .mode-grid{
+    display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px;
+    max-width:1050px;margin:0 auto;
+  }
+  .mode-card{
+    min-height:180px;padding:22px;border-radius:22px;border:2px solid #e5e8f2;
+    background:
+      radial-gradient(circle at top right, rgba(109,94,252,.10), transparent 34%),
+      linear-gradient(180deg, #ffffff, #f8faff);
+    text-align:left;display:flex;flex-direction:column;justify-content:space-between;
+    box-shadow:0 14px 30px rgba(31,41,55,.08);
+  }
+  .mode-card:hover{
+    border-color:#9d97ff;box-shadow:0 18px 34px rgba(79,70,229,.16);
+    transform:translateY(-3px);
+  }
+  .mode-icon{
+    font-size:2rem;line-height:1;margin-bottom:10px;
+    display:inline-flex;align-items:center;justify-content:center;
+    width:54px;height:54px;border-radius:16px;
+    background:linear-gradient(135deg, rgba(109,94,252,.14), rgba(32,199,182,.12));
+    color:#4d42d9;
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.7);
+  }
+  .mode-name{font-size:1.35rem;font-weight:900}
+  .mode-desc{color:var(--muted);font-size:.92rem;font-weight:600;margin-top:5px;line-height:1.35}
+  .last-score{
+    margin-top:16px;display:inline-flex;width:max-content;padding:7px 11px;border-radius:999px;
+    background:linear-gradient(135deg, #eef2ff, #e7fbf8); color:#43516b;
+    font-size:.88rem;font-weight:800; border:1px solid #d8e1f1;
+  }
+  .score-explain{
+    max-width:760px;margin:22px auto 0;padding:12px 14px;border-radius:16px;
+    background:linear-gradient(135deg, #f8fafc, #f1f8ff); color:#59657a;
+    text-align:center;font-size:.9rem;line-height:1.45; border:1px solid #e1e8f2;
+  }
+
+  /* Activité */
+  .workspace{display:grid;grid-template-columns:minmax(0,1fr) 300px;gap:22px;align-items:stretch}
+  .activity-pane{min-width:0}
+  .keypad-panel{
+    border-left:1px solid #e7eaf0;padding-left:22px;
+    display:flex;flex-direction:column;justify-content:center;
+    background:linear-gradient(180deg, rgba(109,94,252,.04), rgba(32,199,182,.04));
+    border-radius:22px;
+  }
+  .keypad-panel h2{margin:0 0 6px;text-align:center;font-size:1.15rem}
+  .keypad-status{
+    min-height:28px;text-align:center;color:var(--muted);font-size:.9rem;
+    font-weight:700;margin-bottom:6px;
+  }
+  .keypad-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+  .keypad-key{
+    min-height:62px;padding:8px;border:2px solid #dde3f0;background:linear-gradient(180deg,#ffffff,#f5f7fd);color:var(--text);
+    border-radius:18px;font-size:1.65rem;font-weight:850;box-shadow:0 4px 0 #dce1ea;
+  }
+  .keypad-key:active{transform:translateY(2px);box-shadow:0 1px 0 #dce1ea}
+  .keypad-key.wide{grid-column:span 3;min-height:50px;font-size:1.05rem}
+  .keypad-key.validate-key{
+    background:linear-gradient(135deg, #7a5cff, #4f46e5);border-color:#5f54eb;color:#fff;box-shadow:0 4px 0 #3932b9;
+  }
+  .keypad-key.number-key:disabled{opacity:.32;background:#f2f4f7}
+  .expression{
+    text-align:center;font-size:clamp(1.85rem,5vw,3.15rem);font-weight:800;
+    margin:0 0 13px;letter-spacing:.02em;
+  }
+  .stepper{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:14px}
+  .step{
+    border-radius:12px;padding:8px 10px;background:#f1f3f7;color:#737b8c;
+    font-weight:700;text-align:center;font-size:.92rem;
+  }
+  .step.active{
+    background:linear-gradient(135deg, #f1efff, #e7fbf8);
+    color:var(--accent); border:1px solid #dbd5ff;
+  }
+  .step.done{
+    background:linear-gradient(135deg, #eaf7f1, #effcf8);
+    color:var(--ok); border:1px solid #cdeedd;
+  }
+  .instruction{text-align:center;font-size:1.12rem;font-weight:750;margin:0 0 9px}
+  .board-wrap{overflow-x:auto;padding:4px 6px 10px}
+  .number-board{
+    display:grid;grid-template-columns:repeat(9,66px);gap:0;width:max-content;
+    margin:0 auto;position:relative;
+  }
+  .digit-cell{
+    height:72px;border:2px solid var(--border);background:linear-gradient(180deg,#ffffff,#fbfcff);
+    display:flex;align-items:center;justify-content:center;font-size:2rem;font-weight:800;position:relative;
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.8);
+  }
+  .digit-cell:not(:first-child){border-left-width:1px}
+  .digit-cell:not(:last-child){border-right-width:1px}
+  .digit-cell:first-child{border-radius:14px 0 0 14px}
+  .digit-cell:last-child{border-radius:0 14px 14px 0}
+  .digit-cell.comma-boundary::after{
+    content:"";position:absolute;top:-2px;right:-3px;bottom:-2px;width:5px;
+    border-radius:4px;background:linear-gradient(180deg,#3e4b68,#6d5efc);z-index:5;pointer-events:none;
+    box-shadow:0 0 8px rgba(109,94,252,.20);
+  }
+  .digit-cell.empty{color:#a9b0bc;background:#fbfcfe}
+  .digit-cell.editable{cursor:pointer;background:#fffdfa}
+  .digit-cell.editable:hover,.digit-cell.editable:focus-visible{
+    background:#fff8e8;
+    outline:none;
+    box-shadow:inset 0 0 0 2px rgba(245,158,11,.18);
+  }
+  .comma-slots{
+    display:grid;grid-template-columns:repeat(8,66px);gap:0;width:max-content;margin:-6px auto 0;
+    touch-action:none;user-select:none;-webkit-user-select:none;
+  }
+  .comma-slot{
+    width:66px;height:44px;justify-self:center;position:relative;display:flex;
+    align-items:center;justify-content:center;color:#a76800;font-size:1.7rem;font-weight:900;
+    line-height:1;cursor:pointer;user-select:none;touch-action:none;-webkit-tap-highlight-color:transparent;
+  }
+  .comma-slot::before{
+    content:"";position:absolute;width:30px;height:34px;border:2px dashed #e4b44d;
+    background:linear-gradient(180deg, var(--comma-soft), #fffaf0);border-radius:9px;transition:.15s ease;
+  }
+  .comma-slot:hover::before,.comma-slot:focus-visible::before{border-color:var(--comma)}
+  .comma-slot:focus-visible{outline:none}
+  .comma-slot.selected::before{
+    background:#ffe2a8;border-style:solid;border-color:var(--comma);
+    box-shadow:0 5px 14px rgba(245,158,11,.2);
+  }
+  .comma-slot.dragging::before{transform:scale(1.08);box-shadow:0 8px 20px rgba(245,158,11,.28)}
+  .comma{position:relative;z-index:2;transform:translateY(-3px);cursor:grab;pointer-events:none}
+  .comma-ghost{
+    position:relative;z-index:2;transform:translateY(-3px);color:#b27a18;opacity:.68;pointer-events:none;
+  }
+  .assist-row{
+    display:flex;justify-content:center;align-items:center;gap:10px;flex-wrap:wrap;
+    margin:2px 0 7px;min-height:48px;
+  }
+  .shortcut-btn,.hint-btn{
+    min-height:44px;padding:9px 16px;border-radius:12px;font-size:.96rem;font-weight:800;
+  }
+  .shortcut-btn{
+    background:linear-gradient(135deg, #f0f2f7, #eef3ff);color:#354052;border:2px solid #dce1ea;
+  }
+  .hint-btn{
+    background:linear-gradient(135deg, #eef9f3, #ebfffb);color:#107451;border:2px solid #b9e4d1;
+  }
+  .hint-popover{
+    display:flex;align-items:center;justify-content:center;gap:12px;width:max-content;max-width:100%;
+    margin:2px auto 7px;padding:10px 16px;border-radius:16px;background:linear-gradient(135deg, #f1fbf6, #eefbff);
+    border:2px solid #a8dfc7;color:#0c6c49;font-weight:850;
+    box-shadow:0 10px 24px rgba(18,128,92,.12);
+  }
+  .hint-popover.multiplication{
+    background:linear-gradient(135deg, #f1fbf6, #eefbff);
+    border-color:#a8dfc7;
+    color:#0c6c49;
+    box-shadow:0 10px 24px rgba(18,128,92,.12);
+  }
+  .hint-popover.division{
+    background:linear-gradient(135deg, #fff1f3, #fff7f7);
+    border-color:#efb2b9;
+    color:#b42336;
+    box-shadow:0 10px 24px rgba(213,68,87,.12);
+  }
+  .hint-arrow-stack{
+    display:flex;align-items:center;justify-content:center;gap:4px;flex-wrap:wrap;
+    min-height:26px;
+  }
+  .arc-arrow{
+    width:30px;height:20px;display:inline-block;vertical-align:middle;
+  }
+  .arc-arrow svg{
+    width:100%;height:100%;display:block;
+  }
+  .arc-arrow.left{}
+  .stepper.direct-mode{grid-template-columns:1fr}
+  .stepper.direct-mode #step1,.stepper.direct-mode #step2{display:none}
+  .direct-note{text-align:center;color:var(--muted);font-weight:700;margin:2px 0 8px}
+  .hint{min-height:24px;text-align:center;font-weight:700;margin-top:6px}
+  .hint.ok{color:var(--ok)} .hint.bad{color:var(--bad)}
+  .answer-row{
+    display:flex;align-items:center;justify-content:center;gap:12px;flex-wrap:wrap;margin:8px 0 4px;
+  }
+  .answer-row label{font-size:1.2rem;font-weight:750}
+  .answer{
+    width:min(360px,80vw);font-size:1.8rem;font-weight:750;padding:12px 16px;
+    border:2px solid var(--border);border-radius:12px;outline:none;
+  }
+  .answer:focus{border-color:var(--accent);box-shadow:0 0 0 4px rgba(79,70,229,.09)}
+    .actions{display:flex;justify-content:center;gap:12px;flex-wrap:wrap;margin-top:10px}
+  .teacher-note{
+    margin-top:10px;padding:12px 15px;border-radius:16px;
+    background:linear-gradient(135deg, #f8fafc, #f3f8ff);color:#59657a;
+    font-size:.9rem;line-height:1.4; border:1px solid #e1e8f2;
+  }
+
+  /* Écran final */
+  .result-screen{text-align:center;padding:38px 12px 44px}
+  .result-title{font-size:clamp(1.8rem,4vw,2.6rem);font-weight:900;margin:0 0 8px}
+  .result-mode{color:var(--muted);font-weight:700;margin-bottom:18px}
+  .big-score{
+    display:inline-flex;align-items:baseline;gap:5px;padding:16px 28px;border-radius:20px;
+    background:linear-gradient(135deg, #f1efff, #e7fbf8);color:var(--accent);font-weight:950;margin-bottom:20px;
+    border:1px solid #dcd8ff;
+  }
+  .big-score strong{font-size:3.4rem;line-height:1}
+  .big-score span{font-size:1.5rem}
+  .result-message{font-weight:700;color:#4c5565;margin:0 0 22px}
+  .result-actions{display:flex;justify-content:center;gap:12px;flex-wrap:wrap}
+
+
+  /* Petite félicitation intégrée à la page : aucun popup système. */
+  .mini-celebration{
+    position:fixed;inset:0;z-index:9999;pointer-events:none;overflow:hidden;
+    display:flex;align-items:center;justify-content:center;
+  }
+  .mini-celebration-toast{
+    position:absolute;top:18%;
+    padding:12px 22px;border-radius:999px;
+    background:rgba(255,255,255,.97);
+    border:2px solid rgba(17,138,98,.28);
+    color:#107451;font-size:1.12rem;font-weight:950;
+    box-shadow:0 12px 32px rgba(18,70,55,.18);
+    animation:celebration-pop 1.55s ease both;
+  }
+  .mini-confetti{
+    position:absolute;top:-22px;
+    width:9px;height:15px;border-radius:3px;
+    opacity:.95;
+    animation:celebration-fall 1.45s ease-in forwards;
+  }
+  @keyframes celebration-pop{
+    0%{opacity:0;transform:translateY(8px) scale(.78)}
+    18%{opacity:1;transform:translateY(0) scale(1.06)}
+    35%{transform:scale(1)}
+    78%{opacity:1}
+    100%{opacity:0;transform:translateY(-7px) scale(.96)}
+  }
+  @keyframes celebration-fall{
+    0%{transform:translate3d(0,-10px,0) rotate(0deg)}
+    100%{transform:translate3d(var(--drift),105vh,0) rotate(var(--spin))}
+  }
+  @media(prefers-reduced-motion:reduce){
+    .mini-celebration-toast{animation:celebration-fade 1.2s ease both}
+    .mini-confetti{display:none}
+    @keyframes celebration-fade{
+      0%,100%{opacity:0}
+      15%,80%{opacity:1}
+    }
+  }
+
+  .hidden{display:none!important}
+
+  @media(max-width:1050px){
+    .workspace{grid-template-columns:1fr}
+    .keypad-panel{border-left:0;border-top:1px solid #e7eaf0;padding:24px 0 0}
+    .keypad-grid{max-width:440px;width:100%;margin:0 auto}
+  }
+  @media(max-width:820px){
+    .mode-grid{grid-template-columns:1fr;max-width:560px}
+    .mode-card{min-height:135px}
+  }
+  @media(max-width:680px){
+    body{padding:8px}
+    .app{border-radius:16px}
+    header,main{padding-left:16px;padding-right:16px}
+    .number-board{grid-template-columns:repeat(9,54px)}
+    .comma-slots{grid-template-columns:repeat(8,54px)}
+    .comma-slot{width:54px;height:54px}
+    .digit-cell{height:62px;font-size:1.65rem}
+    .keypad-key{min-height:64px}
+  }
+</style>
+</head>
+<body>
+<div class="app">
+  <header>
+    <div class="header-left">
+      <button class="menu-btn hidden" id="headerMenuBtn">← Menu</button>
+      <h1 id="appTitle">Puissances de 10</h1>
+    </div>
+    <div class="header-right">
+      <div class="progress" id="progress"></div>
+    </div>
+  </header>
+
+  <main>
+    <section class="menu-screen" id="menuScreen">
+      <h2 class="menu-title">Choisis ton entraînement</h2>
+      <p class="menu-subtitle">10 exercices pour déplacer la virgule, compléter les zéros si nécessaire et écrire le résultat.</p>
+
+      <div class="mode-grid">
+        <button class="mode-card" data-mode="multiplication">
+          <div>
+            <div class="mode-icon">×</div>
+            <div class="mode-name">Multiplication</div>
+            <div class="mode-desc">Multiplier par 10, 100 ou 1000.<br>Nouvelle série aléatoire à chaque partie.</div>
+          </div>
+          <span class="last-score" id="lastMultiplication">Dernier score : — / 10</span>
+        </button>
+
+        <button class="mode-card" data-mode="division">
+          <div>
+            <div class="mode-icon">÷</div>
+            <div class="mode-name">Division</div>
+            <div class="mode-desc">Diviser par 10, 100 ou 1000.<br>Nouvelle série aléatoire à chaque partie.</div>
+          </div>
+          <span class="last-score" id="lastDivision">Dernier score : — / 10</span>
+        </button>
+
+        <button class="mode-card" data-mode="mixed">
+          <div>
+            <div class="mode-icon">× ÷</div>
+            <div class="mode-name">Mélange des deux</div>
+            <div class="mode-desc">5 multiplications et 5 divisions, dans un ordre mélangé.<br>Nouveaux calculs à chaque partie.</div>
+          </div>
+          <span class="last-score" id="lastMixed">Dernier score : — / 10</span>
+        </button>
+      </div>
+
+      <div class="score-explain">
+        Le score compte les réponses finales correctes au premier essai. L’indice et le bouton « Répondre directement » ne font pas perdre de point.
+      </div>
+    </section>
+
+    <section id="activityScreen" class="hidden">
+      <div class="workspace">
+        <section class="activity-pane">
+          <div class="expression" id="expression"></div>
+
+          <div class="stepper">
+            <div class="step active" id="step1">1. Déplacer la virgule</div>
+            <div class="step" id="step2">2. Ajouter ou enlever des 0</div>
+            <div class="step" id="step3">3. Écrire le résultat</div>
+          </div>
+
+          <p class="instruction" id="instruction"></p>
+
+          <div class="assist-row" id="assistRow">
+            <button class="shortcut-btn" id="directBtn">Répondre directement</button>
+            <button class="hint-btn" id="showHintBtn">Indice</button>
+          </div>
+
+          <div class="hint-popover hidden" id="movementHint" role="status" aria-live="polite">
+            <span id="movementHintText"></span>
+            <span class="hint-arrow-stack" id="movementHintArrow" aria-hidden="true"></span>
+          </div>
+
+          <div class="direct-note hidden" id="directNote">Mode réponse directe</div>
+
+          <div class="board-wrap" id="boardWrap">
+            <div class="number-board" id="board"></div>
+            <div class="comma-slots" id="commaSlots"></div>
+          </div>
+
+          <div class="answer-row hidden" id="answerRow">
+            <label for="answer">Réponse :</label>
+            <input id="answer" class="answer" inputmode="none" virtualkeyboardpolicy="manual" autocomplete="off"
+                   aria-label="Réponse saisie au clavier ou avec le pavé numérique">
+          </div>
+
+          <div class="hint" id="hint" aria-live="polite"></div>
+
+          <div class="actions">
+            <button class="secondary" id="resetBtn">Recommencer</button>
+            <button class="primary" id="validateBtn">Valider</button>
+            <button class="success hidden" id="nextBtn">Exercice suivant</button>
+          </div>
+
+          <div class="teacher-note">
+            Utilisation tactile : fais glisser la virgule au doigt ou touche directement son emplacement.
+            À l’étape 2, ajoute ou enlève des 0 si nécessaire. Toutes les cases vides sont utilisables. À l’étape 3, écris la réponse au clavier ou utilise le pavé numérique tactile.
+          </div>
+        </section>
+
+        <aside class="keypad-panel" aria-label="Pavé numérique tactile">
+          <h2>Pavé numérique</h2>
+          <div class="keypad-status" id="keypadStatus">Disponible à l'étape 3</div>
+          <div class="keypad-grid" id="keypad">
+            <button class="keypad-key number-key" data-key="7">7</button>
+            <button class="keypad-key number-key" data-key="8">8</button>
+            <button class="keypad-key number-key" data-key="9">9</button>
+            <button class="keypad-key number-key" data-key="4">4</button>
+            <button class="keypad-key number-key" data-key="5">5</button>
+            <button class="keypad-key number-key" data-key="6">6</button>
+            <button class="keypad-key number-key" data-key="1">1</button>
+            <button class="keypad-key number-key" data-key="2">2</button>
+            <button class="keypad-key number-key" data-key="3">3</button>
+            <button class="keypad-key number-key" data-key=",">,</button>
+            <button class="keypad-key number-key" data-key="0">0</button>
+            <button class="keypad-key number-key" data-key="backspace" aria-label="Effacer le dernier caractère">⌫</button>
+            <button class="keypad-key number-key wide" data-key="clear">Effacer</button>
+            <button class="keypad-key wide validate-key" data-key="validate">Valider</button>
+          </div>
+        </aside>
+      </div>
+    </section>
+
+    <section id="resultScreen" class="result-screen hidden">
+      <h2 class="result-title">Série terminée !</h2>
+      <div class="result-mode" id="resultMode"></div>
+      <div><div class="big-score"><strong id="finalScore">0</strong><span>/ 10</span></div></div>
+      <p class="result-message" id="resultMessage"></p>
+      <div class="result-actions">
+        <button class="secondary" id="resultMenuBtn">Retour au menu</button>
+        <button class="primary" id="replayBtn">Refaire une série</button>
+      </div>
+    </section>
+  </main>
+</div>
+
+<script>
+const FACTORS = [10, 100, 1000];
+
+function randInt(min,max){
+  return Math.floor(Math.random()*(max-min+1))+min;
+}
+
+function pick(array){
+  return array[Math.floor(Math.random()*array.length)];
+}
+
+function makeDigitString(length, allowLeadingZero=false){
+  let out = "";
+  for(let i=0;i<length;i++){
+    if(i===0 && !allowLeadingZero) out += String(randInt(1,9));
+    else out += String(randInt(0,9));
+  }
+  return out;
+}
+
+function ensureLastDigitNonZero(text){
+  if(!text.length) return text;
+  return text.slice(0,-1) + String(randInt(1,9));
+}
+
+function generateDisplay(type, factor){
+  const shift = Math.round(Math.log10(factor));
+  // La multiplication a besoin de place à droite pour déplacer la virgule.
+  const maxDigits = type === "multiplication"
+    ? Math.max(2, Math.min(4, 7-shift))
+    : 4;
+
+  const roll = Math.random();
+
+  // Environ 35 % de nombres entiers.
+  if(roll < 0.35){
+    const len = randInt(1,maxDigits);
+    return makeDigitString(len,false);
+  }
+
+  // Environ 20 % de nombres compris entre 0 et 1, utiles pour travailler les zéros.
+  if(roll < 0.55){
+    const fracLen = randInt(1,Math.max(1,Math.min(3,maxDigits-1)));
+    let frac = makeDigitString(fracLen,true);
+    frac = ensureLastDigitNonZero(frac);
+    return `0,${frac}`;
+  }
+
+  // Le reste : nombres décimaux avec une partie entière non nulle.
+  const totalLen = randInt(2,maxDigits);
+  const intLen = randInt(1,totalLen-1);
+  let digits = makeDigitString(totalLen,false);
+  digits = ensureLastDigitNonZero(digits);
+  return `${digits.slice(0,intLen)},${digits.slice(intLen)}`;
+}
+
+function factorPlan(count){
+  const plan = [];
+  for(let i=0;i<count;i++) plan.push(FACTORS[i % FACTORS.length]);
+  return shuffle(plan);
+}
+
+function generateExercises(type,count){
+  const result = [];
+  const used = new Set();
+  const plan = factorPlan(count);
+  let attempts = 0;
+
+  while(result.length<count && attempts<500){
+    attempts++;
+    const factor = plan[result.length] || pick(FACTORS);
+    const display = generateDisplay(type,factor);
+    const key = `${type}|${display}|${factor}`;
+    if(used.has(key)) continue;
+    used.add(key);
+    result.push({display, value:factor, type});
+  }
+
+  // Filet de sécurité extrêmement improbable : complète quand même la série.
+  while(result.length<count){
+    const factor = pick(FACTORS);
+    const display = String(randInt(1,999));
+    const key = `${type}|${display}|${factor}|${result.length}`;
+    used.add(key);
+    result.push({display, value:factor, type});
+  }
+
+  return result;
+}
+
+const CELL_COUNT = 9;
+const SERIES_LENGTH = 10;
+const STORAGE_KEY = "puissances10_last_scores_v1";
+
+let currentMode = null;
+let currentSeries = [];
+let exerciseIndex = 0;
+let state = null;
+let seriesResults = [];
+let seriesScore = 0;
+let lastScores = loadScores();
+
+const $ = sel => document.querySelector(sel);
+const board = $("#board");
+const commaSlots = $("#commaSlots");
+const expression = $("#expression");
+const instruction = $("#instruction");
+const hint = $("#hint");
+const validateBtn = $("#validateBtn");
+const nextBtn = $("#nextBtn");
+const resetBtn = $("#resetBtn");
+const answerRow = $("#answerRow");
+const answerInput = $("#answer");
+const keypad = $("#keypad");
+const keypadStatus = $("#keypadStatus");
+const directBtn = $("#directBtn");
+const showHintBtn = $("#showHintBtn");
+const movementHint = $("#movementHint");
+const movementHintText = $("#movementHintText");
+const movementHintArrow = $("#movementHintArrow");
+const assistRow = $("#assistRow");
+const boardWrap = $("#boardWrap");
+const directNote = $("#directNote");
+const stepper = document.querySelector(".stepper");
+const menuScreen = $("#menuScreen");
+const activityScreen = $("#activityScreen");
+const resultScreen = $("#resultScreen");
+const headerMenuBtn = $("#headerMenuBtn");
+const appTitle = $("#appTitle");
+const progress = $("#progress");
+
+let commaPointerId = null;
+let commaDragging = false;
+
+function loadScores(){
+  try{
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if(!raw) return {multiplication:null, division:null, mixed:null};
+    return Object.assign({multiplication:null, division:null, mixed:null}, JSON.parse(raw));
+  }catch(e){
+    return {multiplication:null, division:null, mixed:null};
+  }
+}
+
+function saveScores(){
+  try{ localStorage.setItem(STORAGE_KEY, JSON.stringify(lastScores)); }catch(e){}
+}
+
+function renderMenuScores(){
+  const text = key => lastScores[key] === null || lastScores[key] === undefined
+    ? "Dernier score : — / 10"
+    : `Dernier score : ${lastScores[key]} / 10`;
+  $("#lastMultiplication").textContent = text("multiplication");
+  $("#lastDivision").textContent = text("division");
+  $("#lastMixed").textContent = text("mixed");
+}
+
+function shuffle(array){
+  const a = [...array];
+  for(let i=a.length-1;i>0;i--){
+    const j = Math.floor(Math.random()*(i+1));
+    [a[i],a[j]] = [a[j],a[i]];
+  }
+  return a;
+}
+
+function buildSeries(mode){
+  if(mode === "multiplication") return generateExercises("multiplication",SERIES_LENGTH);
+  if(mode === "division") return generateExercises("division",SERIES_LENGTH);
+  const mult = generateExercises("multiplication",5);
+  const div = generateExercises("division",5);
+  return shuffle([...mult,...div]);
+}
+
+function modeLabel(mode){
+  if(mode === "multiplication") return "Multiplication";
+  if(mode === "division") return "Division";
+  return "Mélange multiplication et division";
+}
+
+function showMenu(){
+  menuScreen.classList.remove("hidden");
+  activityScreen.classList.add("hidden");
+  resultScreen.classList.add("hidden");
+  headerMenuBtn.classList.add("hidden");
+  appTitle.textContent = "Puissances de 10";
+  progress.textContent = "";
+  renderMenuScores();
+}
+
+function startSeries(mode){
+  currentMode = mode;
+  currentSeries = buildSeries(mode);
+  exerciseIndex = 0;
+  seriesResults = Array(SERIES_LENGTH).fill(null);
+  seriesScore = 0;
+  menuScreen.classList.add("hidden");
+  resultScreen.classList.add("hidden");
+  activityScreen.classList.remove("hidden");
+  headerMenuBtn.classList.remove("hidden");
+  appTitle.textContent = modeLabel(mode);
+  answerInput.value = "";
+  initExercise(0);
+}
+
+function parseDisplay(display){
+  const parts = display.split(",");
+  const intPart = parts[0];
+  const fracPart = parts[1] || "";
+  return {intPart, fracPart, digits:intPart+fracPart, hasComma:display.includes(",")};
+}
+
+function pow10Shift(value){
+  return Math.round(Math.log10(value));
+}
+
+function computeResult(ex){
+  const n = Number(ex.display.replace(",", "."));
+  return ex.type === "multiplication" ? n * ex.value : n / ex.value;
+}
+
+function canonicalNumber(value){
+  const rounded = Math.round((value + Number.EPSILON) * 1e12) / 1e12;
+  if(Math.abs(rounded-Math.round(rounded)) < 1e-10) return String(Math.round(rounded));
+  return String(rounded).replace(".", ",");
+}
+
+function initExercise(index){
+  const ex = currentSeries[index];
+  const parsed = parseDisplay(ex.display);
+  const shift = pow10Shift(ex.value);
+
+  let start, originalCommaSlot, targetCommaSlot, zeroPositions = [];
+  let digitPositions = [];
+
+  if(ex.type === "multiplication"){
+    start = Math.max(1, Math.min(3, (CELL_COUNT-1) - parsed.digits.length - shift));
+    for(let i=0;i<parsed.digits.length;i++) digitPositions.push(start+i);
+
+    originalCommaSlot = parsed.hasComma
+      ? start + parsed.intPart.length - 1
+      : start + parsed.digits.length - 1;
+
+    targetCommaSlot = originalCommaSlot + shift;
+
+    const lastDigitPos = start + parsed.digits.length - 1;
+    for(let p=lastDigitPos+1;p<=targetCommaSlot;p++){
+      if(p>=0 && p<CELL_COUNT) zeroPositions.push(p);
+    }
+  }else{
+    const minStart = Math.max(1, shift - parsed.intPart.length + 1);
+    const maxStart = Math.max(minStart, CELL_COUNT - parsed.digits.length - 1);
+    start = Math.max(minStart, Math.min(3, maxStart));
+    for(let i=0;i<parsed.digits.length;i++) digitPositions.push(start+i);
+
+    originalCommaSlot = parsed.hasComma
+      ? start + parsed.intPart.length - 1
+      : start + parsed.digits.length - 1;
+
+    targetCommaSlot = originalCommaSlot - shift;
+
+    const firstDigitPos = start;
+    for(let p=targetCommaSlot;p<firstDigitPos;p++){
+      if(p>=0 && p<CELL_COUNT) zeroPositions.push(p);
+    }
+  }
+
+  // Lors d'une division, les zéros finaux qui se retrouvent après la
+  // nouvelle virgule peuvent devoir disparaître (ex. 1200 ÷ 10 = 120).
+  const removableZeroPositions = [];
+  if(ex.type === "division"){
+    for(let idx=parsed.digits.length-1; idx>=0; idx--){
+      if(parsed.digits[idx] !== "0") break;
+      const pos = digitPositions[idx];
+      if(pos > targetCommaSlot) removableZeroPositions.push(pos);
+    }
+  }
+
+  state = {
+    ex, parsed, shift, start, digitPositions,
+    originalCommaSlot,
+    selectedCommaSlot:originalCommaSlot,
+    targetCommaSlot,
+    zeroPositions,
+    removableZeroPositions,
+    filledZeroPositions:[],
+    removedZeroPositions:[],
+    step:1,
+    completed:false,
+    directMode:false,
+    movementHintVisible:false
+  };
+
+  answerInput.value = "";
+  renderAll();
+}
+
+function renderAll(){
+  const symbol = state.ex.type === "multiplication" ? "×" : "÷";
+  expression.textContent = `${state.ex.display} ${symbol} ${state.ex.value}`;
+  updateProgress();
+
+  renderStepper();
+  renderBoard();
+  renderCommaSlots();
+
+  hint.textContent = "";
+  hint.className = "hint";
+  nextBtn.classList.add("hidden");
+  validateBtn.classList.remove("hidden");
+  nextBtn.textContent = exerciseIndex === SERIES_LENGTH-1 ? "Voir le score" : "Exercice suivant";
+  answerRow.classList.toggle("hidden", state.step !== 3);
+
+  const inDirectMode = state.directMode === true;
+  boardWrap.classList.toggle("hidden", inDirectMode);
+  directNote.classList.toggle("hidden", !inDirectMode);
+  stepper.classList.toggle("direct-mode", inDirectMode);
+  assistRow.classList.toggle("hidden", state.step !== 1 || inDirectMode);
+  movementHint.classList.toggle("hidden", !(state.step===1 && state.movementHintVisible && !inDirectMode));
+  movementHint.classList.remove("multiplication","division");
+  movementHint.classList.add(state.ex.type === "division" ? "division" : "multiplication");
+
+  updateKeypadState();
+  showHintBtn.textContent = state.movementHintVisible ? "Masquer l’indice" : "Indice";
+
+  if(state.step===1){
+    instruction.textContent = "Étape 1 : place la virgule au bon endroit.";
+    validateBtn.textContent = "Valider la virgule";
+  }else if(state.step===2){
+    instruction.textContent = "Étape 2 : ajoute ou enlève des 0 si nécessaire, puis valide.";
+    validateBtn.textContent = "Valider les zéros";
+  }else{
+    instruction.textContent = "Étape 3 : écris le résultat de manière classique.";
+    validateBtn.textContent = "Valider la réponse";
+  }
+}
+
+function updateProgress(){
+  progress.textContent = `Exercice ${exerciseIndex+1} / ${SERIES_LENGTH} · Score ${seriesScore} / 10`;
+}
+
+function updateKeypadState(){
+  const active = !!state && state.step===3 && !state.completed;
+  document.querySelectorAll(".number-key").forEach(btn=>btn.disabled=!active);
+  const validateKey = document.querySelector('.validate-key[data-key="validate"]');
+  if(validateKey) validateKey.disabled = !state || state.completed;
+  keypadStatus.textContent = active ? "Clavier ou pavé tactile" : "Disponible à l'étape 3";
+}
+
+function renderStepper(){
+  [1,2,3].forEach(n=>{
+    const el = $("#step"+n);
+    el.classList.remove("active","done");
+    if(!state.directMode && n<state.step) el.classList.add("done");
+    if(n===state.step) el.classList.add("active");
+  });
+}
+
+function renderBoard(){
+  board.innerHTML = "";
+
+  for(let i=0;i<CELL_COUNT;i++){
+    const cell = document.createElement("div");
+    cell.className = "digit-cell empty";
+
+    const idx = state.digitPositions.indexOf(i);
+    const hasOriginalDigit = idx!==-1;
+    const originalDigit = hasOriginalDigit ? state.parsed.digits[idx] : "";
+    const removableOriginalZero =
+      state.step>=2 &&
+      state.ex.type==="division" &&
+      state.removableZeroPositions.includes(i);
+
+    if(hasOriginalDigit){
+      const isRemoved = removableOriginalZero && state.removedZeroPositions.includes(i);
+
+      if(!isRemoved){
+        cell.textContent = originalDigit;
+        cell.classList.remove("empty");
+      }
+
+      if(state.step===2 && removableOriginalZero){
+        cell.classList.add("editable");
+        cell.tabIndex = 0;
+        cell.setAttribute("role","button");
+        cell.setAttribute(
+          "aria-label",
+          isRemoved ? "Remettre ce zéro" : "Enlever ce zéro"
+        );
+
+        const toggleOriginalZero = ()=>{
+          if(state.step!==2) return;
+          const at = state.removedZeroPositions.indexOf(i);
+          if(at===-1) state.removedZeroPositions.push(i);
+          else state.removedZeroPositions.splice(at,1);
+          renderBoard();
+        };
+
+        cell.addEventListener("click",toggleOriginalZero);
+        cell.addEventListener("keydown",e=>{
+          if(e.key==="Enter" || e.key===" "){
+            e.preventDefault();
+            toggleOriginalZero();
+          }
+        });
+      }
+    }else{
+      // À l'étape 2, toutes les cases vides peuvent recevoir un zéro.
+      // On ne révèle donc plus les emplacements réellement nécessaires.
+      const isFilled = state.filledZeroPositions.includes(i);
+
+      if(isFilled){
+        cell.textContent = "0";
+        cell.classList.remove("empty");
+      }
+
+      if(state.step===2){
+        cell.classList.add("editable");
+        cell.tabIndex = 0;
+        cell.setAttribute("role","button");
+        cell.setAttribute(
+          "aria-label",
+          isFilled ? "Enlever le zéro de cette case" : "Ajouter un zéro dans cette case"
+        );
+
+        const toggleAddedZero = ()=>{
+          if(state.step!==2) return;
+          const at = state.filledZeroPositions.indexOf(i);
+          if(at===-1) state.filledZeroPositions.push(i);
+          else state.filledZeroPositions.splice(at,1);
+          renderBoard();
+        };
+
+        cell.addEventListener("click",toggleAddedZero);
+        cell.addEventListener("keydown",e=>{
+          if(e.key==="Enter" || e.key===" "){
+            e.preventDefault();
+            toggleAddedZero();
+          }
+        });
+      }
+    }
+
+    board.appendChild(cell);
+  }
+
+  refreshBoardBoundary();
+}
+function refreshBoardBoundary(){
+  [...board.children].forEach((cell,i)=>{
+    cell.classList.toggle("comma-boundary",i===state.selectedCommaSlot);
+  });
+}
+
+function renderCommaSlots(){
+  commaSlots.innerHTML = "";
+  for(let i=0;i<CELL_COUNT-1;i++){
+    const slot = document.createElement("div");
+    slot.className = "comma-slot";
+    slot.tabIndex = 0;
+    slot.dataset.slot = i;
+    slot.setAttribute("aria-label",`Emplacement de virgule ${i+1}`);
+    slot.addEventListener("keydown",e=>{
+      if(state.step!==1) return;
+      if(e.key==="Enter" || e.key===" "){
+        e.preventDefault();
+        state.selectedCommaSlot = i;
+        refreshCommaSlotsVisual();
+      }
+    });
+    commaSlots.appendChild(slot);
+  }
+  refreshCommaSlotsVisual();
+}
+
+function refreshCommaSlotsVisual(){
+  refreshBoardBoundary();
+  [...commaSlots.children].forEach((slot,i)=>{
+    slot.classList.toggle("selected",i===state.selectedCommaSlot);
+    slot.classList.toggle("dragging",commaDragging && i===state.selectedCommaSlot);
+    slot.textContent = "";
+
+    if(i===state.originalCommaSlot && i!==state.selectedCommaSlot){
+      const ghost = document.createElement("span");
+      ghost.className = "comma-ghost";
+      ghost.textContent = ",";
+      ghost.setAttribute("aria-hidden","true");
+      slot.appendChild(ghost);
+    }
+    if(i===state.selectedCommaSlot){
+      const comma = document.createElement("span");
+      comma.className = "comma";
+      comma.textContent = ",";
+      slot.appendChild(comma);
+    }
+  });
+}
+
+function closestCommaSlot(clientX){
+  const slots = [...commaSlots.children];
+  let bestIndex=0,bestDistance=Infinity;
+  slots.forEach((slot,index)=>{
+    const rect=slot.getBoundingClientRect();
+    const center=rect.left+rect.width/2;
+    const distance=Math.abs(clientX-center);
+    if(distance<bestDistance){bestDistance=distance;bestIndex=index;}
+  });
+  return bestIndex;
+}
+
+commaSlots.addEventListener("pointerdown",e=>{
+  if(!state || state.step!==1) return;
+  const slot=e.target.closest(".comma-slot");
+  if(!slot) return;
+  e.preventDefault();
+  commaPointerId=e.pointerId;
+  commaDragging=true;
+  state.selectedCommaSlot=Number(slot.dataset.slot);
+  commaSlots.setPointerCapture?.(e.pointerId);
+  refreshCommaSlotsVisual();
+});
+
+commaSlots.addEventListener("pointermove",e=>{
+  if(!commaDragging || e.pointerId!==commaPointerId || state.step!==1) return;
+  e.preventDefault();
+  const next=closestCommaSlot(e.clientX);
+  if(next!==state.selectedCommaSlot){
+    state.selectedCommaSlot=next;
+    refreshCommaSlotsVisual();
+  }
+});
+
+function finishCommaDrag(e){
+  if(!commaDragging || (e.pointerId!==undefined && e.pointerId!==commaPointerId)) return;
+  commaDragging=false;
+  if(commaPointerId!==null && commaSlots.hasPointerCapture?.(commaPointerId)){
+    commaSlots.releasePointerCapture(commaPointerId);
+  }
+  commaPointerId=null;
+  refreshCommaSlotsVisual();
+}
+commaSlots.addEventListener("pointerup",finishCommaDrag);
+commaSlots.addEventListener("pointercancel",finishCommaDrag);
+
+
+function showMiniCelebration(message){
+  document.querySelector(".mini-celebration")?.remove();
+
+  const layer=document.createElement("div");
+  layer.className="mini-celebration";
+  layer.setAttribute("aria-hidden","true");
+
+  const toast=document.createElement("div");
+  toast.className="mini-celebration-toast";
+  toast.textContent=message;
+  layer.appendChild(toast);
+
+  const colors=["#18a66d","#6d5efc","#ff9f1c","#20c7b6","#8057c8"];
+  for(let i=0;i<18;i++){
+    const piece=document.createElement("i");
+    piece.className="mini-confetti";
+    piece.style.left=`${8+Math.random()*84}%`;
+    piece.style.background=colors[i%colors.length];
+    piece.style.animationDelay=`${Math.random()*.18}s`;
+    piece.style.animationDuration=`${1.15+Math.random()*.45}s`;
+    piece.style.setProperty("--drift",`${-65+Math.random()*130}px`);
+    piece.style.setProperty("--spin",`${240+Math.random()*520}deg`);
+    layer.appendChild(piece);
+  }
+
+  document.body.appendChild(layer);
+  window.setTimeout(()=>layer.remove(),1900);
+}
+
+function normalizeAnswer(s){
+  return s.trim().replace(/\s/g,"").replace(",",".");
+}
+
+function setHint(message,kind){
+  hint.textContent=message;
+  hint.className="hint "+kind;
+}
+
+function validate(){
+  if(!state || state.completed) return;
+
+  if(state.step===1){
+    if(state.selectedCommaSlot===state.targetCommaSlot){
+      setHint("Bravo, la virgule est bien placée.","ok");
+      state.step=2;
+      setTimeout(renderAll,450);
+    }else{
+      setHint("La virgule n’est pas au bon endroit. Essaie encore.","bad");
+    }
+    return;
+  }
+
+  if(state.step===2){
+    const requiredAdds = new Set(state.zeroPositions);
+    const actualAdds = new Set(state.filledZeroPositions);
+
+    const additionsOk =
+      requiredAdds.size === actualAdds.size &&
+      [...requiredAdds].every(pos=>actualAdds.has(pos));
+
+    const requiredRemovals = new Set(state.removableZeroPositions || []);
+    const actualRemovals = new Set(state.removedZeroPositions || []);
+
+    const removalsOk =
+      requiredRemovals.size === actualRemovals.size &&
+      [...requiredRemovals].every(pos=>actualRemovals.has(pos));
+
+    if(additionsOk && removalsOk){
+      setHint("Très bien, les zéros sont correctement placés.","ok");
+      state.step=3;
+      setTimeout(renderAll,450);
+    }else{
+      setHint("Les zéros ne sont pas encore correctement placés. Vérifie s’il faut en ajouter ou en enlever.","bad");
+    }
+    return;
+  }
+
+  if(state.step===3){
+    if(answerInput.value.trim()===""){
+      setHint("Écris une réponse avant de valider.","bad");
+      return;
+    }
+
+    const expected=computeResult(state.ex);
+    const entered=Number(normalizeAnswer(answerInput.value));
+    const correct=Number.isFinite(entered) && Math.abs(entered-expected)<1e-10;
+
+    if(seriesResults[exerciseIndex]===null){
+      seriesResults[exerciseIndex]=correct ? 1 : 0;
+      if(correct) seriesScore++;
+      updateProgress();
+    }
+
+    if(correct){
+      const symbol=state.ex.type==="multiplication" ? "×" : "÷";
+      setHint(`Bravo ! ${state.ex.display} ${symbol} ${state.ex.value} = ${canonicalNumber(expected)}`,"ok");
+      state.completed=true;
+      validateBtn.classList.add("hidden");
+      nextBtn.classList.remove("hidden");
+      $("#step3").classList.remove("active");
+      $("#step3").classList.add("done");
+      updateKeypadState();
+      showMiniCelebration("Bravo ! Calcul réussi !");
+    }else{
+      setHint("La réponse n'est pas encore correcte. Essaie encore.","bad");
+    }
+  }
+}
+
+function finishSeries(){
+  lastScores[currentMode]=seriesScore;
+  saveScores();
+
+  activityScreen.classList.add("hidden");
+  resultScreen.classList.remove("hidden");
+  headerMenuBtn.classList.remove("hidden");
+  appTitle.textContent="Série terminée";
+  progress.textContent="";
+  $("#resultMode").textContent=modeLabel(currentMode);
+  $("#finalScore").textContent=seriesScore;
+
+  let message;
+  if(seriesScore===10) message="Excellent : 10 réponses justes au premier essai.";
+  else if(seriesScore>=8) message="Très bon résultat.";
+  else if(seriesScore>=6) message="Bon travail, quelques exercices peuvent encore être consolidés.";
+  else message="Tu peux refaire une série pour t’entraîner encore.";
+  $("#resultMessage").textContent=message;
+}
+
+keypad.addEventListener("click",e=>{
+  const button=e.target.closest("[data-key]");
+  if(!button || button.disabled) return;
+  const key=button.dataset.key;
+
+  if(key==="validate"){validate();return;}
+  if(!state || state.step!==3 || state.completed) return;
+
+  if(key==="backspace"){answerInput.value=answerInput.value.slice(0,-1);return;}
+  if(key==="clear"){answerInput.value="";return;}
+  if(key===","){
+    if(!answerInput.value.includes(",")) answerInput.value+=",";
+    return;
+  }
+  if(/^\d$/.test(key) && answerInput.value.length<12) answerInput.value+=key;
+});
+
+directBtn.addEventListener("click",()=>{
+  if(!state || state.step!==1) return;
+  state.directMode=true;
+  state.movementHintVisible=false;
+  state.step=3;
+  answerInput.value="";
+  renderAll();
+});
+
+showHintBtn.addEventListener("click",()=>{
+  if(!state || state.step!==1 || state.directMode) return;
+  state.movementHintVisible=!state.movementHintVisible;
+  const direction=state.ex.type==="multiplication" ? "droite" : "gauche";
+  const count=Math.abs(state.shift);
+  const hintColor = state.ex.type==="division" ? "#d54457" : "#18a66d";
+  movementHintText.textContent=`${count} déplacement${count>1 ? "s" : ""} vers la ${direction}`;
+  const rightArc = `
+    <span class="arc-arrow right">
+      <svg viewBox="0 0 30 20" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false">
+        <path d="M2.8 16 C9.5 8.4 18 6 24.2 8.2" fill="none" stroke="${hintColor}" stroke-width="2.7" stroke-linecap="round"/>
+        <path d="M21.4 4.2 L28 10.2 L21.2 15.8" fill="none" stroke="${hintColor}" stroke-width="2.7" stroke-linecap="round" stroke-linejoin="miter"/>
+      </svg>
+    </span>
+  `;
+  const leftArc = `
+    <span class="arc-arrow left">
+      <svg viewBox="0 0 30 20" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false">
+        <path d="M27.2 16 C20.5 8.4 12 6 5.8 8.2" fill="none" stroke="${hintColor}" stroke-width="2.7" stroke-linecap="round"/>
+        <path d="M8.6 4.2 L2 10.2 L8.8 15.8" fill="none" stroke="${hintColor}" stroke-width="2.7" stroke-linecap="round" stroke-linejoin="miter"/>
+      </svg>
+    </span>
+  `;
+  const arcUnit = direction==="gauche" ? leftArc : rightArc;
+  const arcMarkup = Array.from({length: count}, () => arcUnit).join("");
+  movementHintArrow.innerHTML = arcMarkup;
+  movementHint.classList.remove("multiplication","division");
+  movementHint.classList.add(state.ex.type === "division" ? "division" : "multiplication");
+  movementHint.classList.toggle("hidden",!state.movementHintVisible);
+  showHintBtn.textContent=state.movementHintVisible ? "Masquer l’indice" : "Indice";
+});
+
+answerInput.addEventListener("input",()=>{
+  if(!state || state.step!==3 || state.completed) return;
+  let value=answerInput.value
+    .replace(/\./g,",")
+    .replace(/[^0-9,-]/g,"");
+
+  const negative=value.startsWith("-");
+  value=value.replace(/-/g,"");
+  const parts=value.split(",");
+  value=parts.shift();
+  if(parts.length) value+=","+parts.join("");
+  if(negative) value="-"+value;
+
+  if(value.length>14) value=value.slice(0,14);
+  if(answerInput.value!==value) answerInput.value=value;
+});
+
+answerInput.addEventListener("keydown",e=>{
+  if(!state || state.step!==3 || state.completed) return;
+  if(e.key==="Enter"){
+    e.preventDefault();
+    validate();
+  }
+});
+
+validateBtn.addEventListener("click",validate);
+
+nextBtn.addEventListener("click",()=>{
+  if(exerciseIndex===SERIES_LENGTH-1){
+    finishSeries();
+  }else{
+    exerciseIndex++;
+    initExercise(exerciseIndex);
+  }
+});
+
+resetBtn.addEventListener("click",()=>{
+  if(!state) return;
+  initExercise(exerciseIndex);
+});
+
+document.querySelectorAll(".mode-card").forEach(btn=>{
+  btn.addEventListener("click",()=>startSeries(btn.dataset.mode));
+});
+
+headerMenuBtn.addEventListener("click",showMenu);
+$("#resultMenuBtn").addEventListener("click",showMenu);
+$("#replayBtn").addEventListener("click",()=>startSeries(currentMode));
+
+renderMenuScores();
+showMenu();
+</script>
+</body>
+</html>
