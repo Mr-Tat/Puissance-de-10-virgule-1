@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Puissance de 10 · Guide — v1.0</title>
+<title>Puissance de 10 · Guide — v1.1</title>
 <style>
   :root{
     --bg:#1c1b34;
@@ -139,18 +139,25 @@
   .activity-pane{min-width:0}
   .guided-layout{
     display:grid;
-    grid-template-columns:165px minmax(0,1fr);
-    gap:18px;
+    grid-template-columns:175px minmax(0,1fr);
+    grid-template-areas:
+      "top top"
+      "assist body";
+    column-gap:18px;
+    row-gap:2px;
     align-items:start;
   }
+  .guided-top{grid-area:top;min-width:0}
   .assist-column{
-    padding-top:5px;
+    grid-area:assist;
     display:flex;
     flex-direction:column;
     gap:10px;
     min-width:0;
+    align-self:start;
+    padding-top:4px;
   }
-  .guided-main{min-width:0}
+  .guided-body{grid-area:body;min-width:0}
   .keypad-panel{
     border-left:1px solid #e7eaf0;padding-left:22px;
     display:flex;flex-direction:column;justify-content:center;
@@ -247,13 +254,23 @@
   }
   .assist-row button{width:100%}
   .shortcut-btn,.hint-btn{
-    min-height:44px;padding:9px 16px;border-radius:12px;font-size:.96rem;font-weight:800;
+    min-height:50px;padding:10px 13px;border-radius:13px;font-size:.94rem;font-weight:900;
+    box-shadow:0 6px 14px rgba(35,44,55,.10);
+    transition:transform .12s ease, box-shadow .12s ease;
   }
+  .shortcut-btn:hover,.hint-btn:hover{transform:translateY(-1px)}
+  .shortcut-btn:active,.hint-btn:active{transform:translateY(1px)}
   .shortcut-btn{
-    background:linear-gradient(135deg, #f0f2f7, #eef3ff);color:#354052;border:2px solid #dce1ea;
+    background:linear-gradient(135deg,#22b573,#129b5e);
+    color:#fff;
+    border:2px solid #0d8a51;
+    box-shadow:0 7px 16px rgba(18,155,94,.22);
   }
   .hint-btn{
-    background:linear-gradient(135deg, #eef9f3, #ebfffb);color:#107451;border:2px solid #b9e4d1;
+    background:linear-gradient(135deg,#ffd95a,#f5b928);
+    color:#5b4200;
+    border:2px solid #e1a914;
+    box-shadow:0 7px 16px rgba(225,169,20,.22);
   }
   .hint-popover{
     display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;width:100%;max-width:100%;
@@ -369,10 +386,14 @@
     .keypad-grid{max-width:440px;width:100%;margin:0 auto}
   }
   @media(max-width:900px){
-    .guided-layout{grid-template-columns:1fr}
+    .guided-layout{
+      grid-template-columns:1fr;
+      grid-template-areas:"top" "assist" "body";
+      row-gap:10px;
+    }
     .assist-column{padding-top:0}
     .assist-row{flex-direction:row;justify-content:center;flex-wrap:wrap}
-    .assist-row button{width:auto}
+    .assist-row button{width:auto;min-width:170px}
     .hint-popover{width:max-content;max-width:100%;align-self:center}
   }
   @media(max-width:820px){
@@ -429,7 +450,7 @@
   <header>
     <div class="header-left">
       <button class="menu-btn hidden" id="headerMenuBtn">← Menu</button>
-      <div class="app-title-wrap"><h1 id="appTitle">Puissance de 10 · Guide</h1><span class="version-badge">v1.0</span></div>
+      <div class="app-title-wrap"><h1 id="appTitle">Puissance de 10 · Guide</h1><span class="version-badge">v1.1</span></div>
     </div>
     <div class="header-right">
       <div class="progress" id="progress"></div>
@@ -479,6 +500,18 @@
       <div class="workspace">
         <section class="activity-pane">
           <div class="guided-layout">
+            <div class="guided-top">
+              <div class="expression" id="expression"></div>
+
+              <div class="stepper">
+                <div class="step active" id="step1">1. Déplacer la virgule</div>
+                <div class="step" id="step2">2. Ajouter ou enlever des 0</div>
+                <div class="step" id="step3">3. Écrire le résultat</div>
+              </div>
+
+              <p class="instruction" id="instruction"></p>
+            </div>
+
             <aside class="assist-column" aria-label="Aides et raccourcis">
               <div class="assist-row" id="assistRow">
                 <button class="shortcut-btn" id="directBtn">Répondre directement</button>
@@ -493,17 +526,7 @@
               <div class="direct-note hidden" id="directNote">Mode réponse directe</div>
             </aside>
 
-            <div class="guided-main">
-              <div class="expression" id="expression"></div>
-
-              <div class="stepper">
-                <div class="step active" id="step1">1. Déplacer la virgule</div>
-                <div class="step" id="step2">2. Ajouter ou enlever des 0</div>
-                <div class="step" id="step3">3. Écrire le résultat</div>
-              </div>
-
-              <p class="instruction" id="instruction"></p>
-
+            <div class="guided-body">
               <div class="board-wrap" id="boardWrap">
                 <div class="number-board" id="board"></div>
                 <div class="comma-slots" id="commaSlots"></div>
