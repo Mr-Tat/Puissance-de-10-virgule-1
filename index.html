@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Puissance de 10 · Guide — v1.1</title>
+<title>Puissance de 10 · Guide — v1.2</title>
 <style>
   :root{
     --bg:#1c1b34;
@@ -450,7 +450,7 @@
   <header>
     <div class="header-left">
       <button class="menu-btn hidden" id="headerMenuBtn">← Menu</button>
-      <div class="app-title-wrap"><h1 id="appTitle">Puissance de 10 · Guide</h1><span class="version-badge">v1.1</span></div>
+      <div class="app-title-wrap"><h1 id="appTitle">Puissance de 10 · Guide</h1><span class="version-badge">v1.2</span></div>
     </div>
     <div class="header-right">
       <div class="progress" id="progress"></div>
@@ -725,36 +725,79 @@ let commaPointerId = null;
 let commaDragging = false;
 
 
-function enregistrerScoreMathas(score, total, niveau) {
-  const key = "mathas_scores_" + window.location.pathname.toLowerCase();
+function estMeilleurResultat(nouveau, ancien) {
+  if (!ancien) return true;
 
-  let scores = [];
+  const tauxNouveau = nouveau.total > 0
+    ? nouveau.score / nouveau.total
+    : 0;
 
-  try {
-    scores = JSON.parse(localStorage.getItem(key)) || [];
-  } catch {
-    scores = [];
+  const tauxAncien = ancien.total > 0
+    ? ancien.score / ancien.total
+    : 0;
+
+  if (tauxNouveau !== tauxAncien) {
+    return tauxNouveau > tauxAncien;
   }
 
-  scores.unshift({
+  if (nouveau.total !== ancien.total) {
+    return nouveau.total > ancien.total;
+  }
+
+  if ((nouveau.niveauRang ?? 0) !== (ancien.niveauRang ?? 0)) {
+    return (nouveau.niveauRang ?? 0) > (ancien.niveauRang ?? 0);
+  }
+
+  return true;
+}
+
+function enregistrerResultatMathas(score, total, niveau, niveauRang) {
+  const key = "mathas_scores_" + window.location.pathname.toLowerCase();
+
+  const nouveauResultat = {
     score,
     total,
     niveau,
+    niveauRang,
     date: new Date().toISOString()
-  });
+  };
+
+  let donnees = {
+    dernier: null,
+    meilleur: null
+  };
 
   try {
-    localStorage.setItem(
-      key,
-      JSON.stringify(scores.slice(0, 3))
-    );
-  } catch {}
+    const existant = JSON.parse(localStorage.getItem(key));
+    if (existant && typeof existant === "object") {
+      donnees = {
+        dernier: existant.dernier ?? null,
+        meilleur: existant.meilleur ?? null
+      };
+    }
+  } catch {
+    // Si les anciennes données sont illisibles, on repart proprement.
+  }
+
+  donnees.dernier = nouveauResultat;
+
+  if (estMeilleurResultat(nouveauResultat, donnees.meilleur)) {
+    donnees.meilleur = nouveauResultat;
+  }
+
+  localStorage.setItem(key, JSON.stringify(donnees));
 }
 
 function niveauMathas(mode){
   if(mode==="multiplication") return "Multiplications";
   if(mode==="division") return "Divisions";
   return "Mélange";
+}
+
+function niveauRangMathas(mode){
+  if(mode==="multiplication") return 1;
+  if(mode==="division") return 2;
+  return 3;
 }
 
 function loadScores(){
@@ -1304,10 +1347,11 @@ function finishSeries(){
   lastScores[currentMode]=seriesScore;
   saveScores();
 
-  enregistrerScoreMathas(
+  enregistrerResultatMathas(
     seriesScore,
     SERIES_LENGTH,
-    niveauMathas(currentMode)
+    niveauMathas(currentMode),
+    niveauRangMathas(currentMode)
   );
 
   activityScreen.classList.add("hidden");
