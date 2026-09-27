@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Puissance de 10 · Guide — v1.2</title>
+<title>Puissance de 10 · Guide — v1.4</title>
 <style>
   :root{
     --bg:#1c1b34;
@@ -443,6 +443,66 @@
   }
 }
 
+
+/* Progression des niveaux */
+.mode-card{position:relative}
+.mode-card.locked{
+  opacity:.48;
+  filter:saturate(.55);
+  cursor:not-allowed;
+}
+.mode-card.locked:hover{transform:none}
+.mode-card.locked::after{
+  content:attr(data-lock-reason);
+  position:absolute;
+  top:12px;
+  right:12px;
+  max-width:150px;
+  padding:6px 9px;
+  border-radius:999px;
+  background:rgba(42,49,58,.88);
+  color:#fff;
+  font-size:.72rem;
+  font-weight:850;
+  line-height:1.15;
+  text-align:center;
+  box-shadow:0 4px 12px rgba(20,25,30,.14);
+}
+
+/* Accès enseignant / Master mode : volontairement très discret. */
+.master-toggle{
+  position:fixed;
+  left:7px;
+  bottom:7px;
+  z-index:8999;
+  width:27px;
+  height:27px;
+  padding:0;
+  display:grid;
+  place-items:center;
+  border:1px solid rgba(65,75,85,.15);
+  border-radius:50%;
+  background:rgba(255,255,255,.32);
+  color:#27313a;
+  font:850 .72rem/1 system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+  opacity:.13;
+  cursor:pointer;
+  box-shadow:none;
+  transition:opacity .15s ease, background .15s ease, transform .15s ease;
+}
+.master-toggle:hover,.master-toggle:focus-visible{
+  opacity:.58;
+  background:rgba(255,255,255,.92);
+  outline:none;
+}
+.master-toggle.active{
+  opacity:.38;
+  background:rgba(214,247,230,.88);
+  border-color:rgba(18,155,94,.35);
+  color:#0d7b49;
+}
+.master-toggle:active{transform:scale(.94)}
+
 </style>
 </head>
 <body>
@@ -450,7 +510,7 @@
   <header>
     <div class="header-left">
       <button class="menu-btn hidden" id="headerMenuBtn">← Menu</button>
-      <div class="app-title-wrap"><h1 id="appTitle">Puissance de 10 · Guide</h1><span class="version-badge">v1.2</span></div>
+      <div class="app-title-wrap"><h1 id="appTitle">Puissance de 10 · Guide</h1><span class="version-badge">v1.4</span></div>
     </div>
     <div class="header-right">
       <div class="progress" id="progress"></div>
@@ -590,6 +650,9 @@
   </main>
 </div>
 
+<button id="masterToggle" class="master-toggle" type="button"
+        aria-label="Master mode" aria-pressed="false" title="Master mode">M</button>
+
 <script>
 const FACTORS = [10, 100, 1000];
 
@@ -683,6 +746,9 @@ function generateExercises(type,count){
 const CELL_COUNT = 9;
 const SERIES_LENGTH = 10;
 const STORAGE_KEY = "puissances10_last_scores_v1";
+const UNLOCK_STORAGE_KEY = "puissances10_unlocks_v2";
+const MASTER_SESSION_KEY = "puissances10_master_session_v1";
+const MASTER_PASSWORD = "Thecakeisalie";
 
 let currentMode = null;
 let currentSeries = [];
@@ -690,7 +756,10 @@ let exerciseIndex = 0;
 let state = null;
 let seriesResults = [];
 let seriesScore = 0;
+let autonomousSeriesScore = 0;
 let lastScores = loadScores();
+let unlockState = loadUnlockState();
+let masterMode = loadMasterMode();
 
 const $ = sel => document.querySelector(sel);
 const board = $("#board");
@@ -720,6 +789,7 @@ const resultScreen = $("#resultScreen");
 const headerMenuBtn = $("#headerMenuBtn");
 const appTitle = $("#appTitle");
 const progress = $("#progress");
+const masterToggle = $("#masterToggle");
 
 let commaPointerId = null;
 let commaDragging = false;
@@ -800,6 +870,95 @@ function niveauRangMathas(mode){
   return 3;
 }
 
+
+function loadUnlockState(){
+  try{
+    const raw=localStorage.getItem(UNLOCK_STORAGE_KEY);
+    if(!raw) return {division:false,mixed:false,migrated:false};
+    return Object.assign({division:false,mixed:false,migrated:false},JSON.parse(raw));
+  }catch(e){
+    return {division:false,mixed:false,migrated:false};
+  }
+}
+
+function saveUnlockState(){
+  try{localStorage.setItem(UNLOCK_STORAGE_KEY,JSON.stringify(unlockState));}catch(e){}
+}
+
+function loadMasterMode(){
+  try{return sessionStorage.getItem(MASTER_SESSION_KEY)==="1";}catch(e){return false;}
+}
+
+function ensureProgressionMigration(){
+  if(unlockState.migrated) return;
+
+  // Les anciennes versions du Guide ne mémorisaient pas si une aide
+  // avait été utilisée. On ne peut donc pas déduire honnêtement
+  // un ancien 90 % "sans aide".
+  unlockState.migrated=true;
+  saveUnlockState();
+}
+
+function modeUnlocked(mode){
+  if(masterMode) return true;
+  if(mode==="multiplication") return true;
+  if(mode==="division") return !!unlockState.division;
+  if(mode==="mixed") return !!unlockState.mixed;
+  return false;
+}
+
+function updateProgressionAfterResult(mode,score,total){
+  // Le Master peut produire des scores, mais ne modifie pas la progression élève.
+  if(masterMode || total<=0 || score/total<0.9) return;
+  let changed=false;
+  if(mode==="multiplication" && !unlockState.division){
+    unlockState.division=true; changed=true;
+  }else if(mode==="division" && !unlockState.mixed){
+    unlockState.mixed=true; changed=true;
+  }
+  if(changed) saveUnlockState();
+}
+
+function renderModeLocks(){
+  document.querySelectorAll(".mode-card").forEach(card=>{
+    const locked=!modeUnlocked(card.dataset.mode);
+    card.classList.toggle("locked",locked);
+    card.setAttribute("aria-disabled",locked ? "true" : "false");
+    card.tabIndex=locked ? -1 : 0;
+    if(locked){
+      card.dataset.lockReason="🔒 90 % sans aide";
+      card.title="Obtiens au moins 90 % sans aide au niveau précédent pour le débloquer.";
+    }else{
+      card.removeAttribute("data-lock-reason");
+      card.title="";
+    }
+  });
+}
+
+function updateMasterButton(){
+  if(!masterToggle) return;
+  masterToggle.classList.toggle("active",masterMode);
+  masterToggle.setAttribute("aria-pressed",masterMode ? "true" : "false");
+  masterToggle.title=masterMode ? "Master mode actif jusqu’à la fermeture" : "Master mode";
+}
+
+function activateMasterMode(){
+  if(masterMode){updateMasterButton();renderModeLocks();return;}
+  const password=window.prompt("Mot de passe Master mode :");
+  if(password===null) return;
+  if(password===MASTER_PASSWORD){
+    masterMode=true;
+    try{sessionStorage.setItem(MASTER_SESSION_KEY,"1")}catch(e){}
+    updateMasterButton();
+    renderModeLocks();
+  }else{
+    masterToggle?.animate(
+      [{transform:"translateX(0)"},{transform:"translateX(-3px)"},{transform:"translateX(3px)"},{transform:"translateX(0)"}],
+      {duration:220}
+    );
+  }
+}
+
 function loadScores(){
   try{
     const raw = localStorage.getItem(STORAGE_KEY);
@@ -821,6 +980,7 @@ function renderMenuScores(){
   $("#lastMultiplication").textContent = text("multiplication");
   $("#lastDivision").textContent = text("division");
   $("#lastMixed").textContent = text("mixed");
+  renderModeLocks();
 }
 
 function shuffle(array){
@@ -857,11 +1017,13 @@ function showMenu(){
 }
 
 function startSeries(mode){
+  if(!modeUnlocked(mode)) return;
   currentMode = mode;
   currentSeries = buildSeries(mode);
   exerciseIndex = 0;
   seriesResults = Array(SERIES_LENGTH).fill(null);
   seriesScore = 0;
+  autonomousSeriesScore = 0;
   menuScreen.classList.add("hidden");
   resultScreen.classList.add("hidden");
   activityScreen.classList.remove("hidden");
@@ -979,7 +1141,8 @@ function initExercise(index){
     step:1,
     completed:false,
     directMode:false,
-    movementHintVisible:false
+    movementHintVisible:false,
+    assistanceUsed:false
   };
 
   answerInput.value = "";
@@ -1323,7 +1486,10 @@ function validate(){
 
     if(seriesResults[exerciseIndex]===null){
       seriesResults[exerciseIndex]=correct ? 1 : 0;
-      if(correct) seriesScore++;
+      if(correct){
+        seriesScore++;
+        if(!state.assistanceUsed) autonomousSeriesScore++;
+      }
       updateProgress();
     }
 
@@ -1346,6 +1512,7 @@ function validate(){
 function finishSeries(){
   lastScores[currentMode]=seriesScore;
   saveScores();
+  updateProgressionAfterResult(currentMode,autonomousSeriesScore,SERIES_LENGTH);
 
   enregistrerResultatMathas(
     seriesScore,
@@ -1389,6 +1556,7 @@ keypad.addEventListener("click",e=>{
 
 directBtn.addEventListener("click",()=>{
   if(!state || state.step!==1) return;
+  state.assistanceUsed=true;
   state.directMode=true;
   state.movementHintVisible=false;
   state.step=3;
@@ -1398,6 +1566,7 @@ directBtn.addEventListener("click",()=>{
 
 showHintBtn.addEventListener("click",()=>{
   if(!state || state.step!==1 || state.directMode) return;
+  if(!state.movementHintVisible) state.assistanceUsed=true;
   state.movementHintVisible=!state.movementHintVisible;
   const direction=state.ex.type==="multiplication" ? "droite" : "gauche";
   const count=Math.abs(state.shift);
@@ -1472,11 +1641,14 @@ resetBtn.addEventListener("click",()=>{
 document.querySelectorAll(".mode-card").forEach(btn=>{
   btn.addEventListener("click",()=>startSeries(btn.dataset.mode));
 });
+masterToggle?.addEventListener("click",activateMasterMode);
 
 headerMenuBtn.addEventListener("click",showMenu);
 $("#resultMenuBtn").addEventListener("click",showMenu);
 $("#replayBtn").addEventListener("click",()=>startSeries(currentMode));
 
+ensureProgressionMigration();
+updateMasterButton();
 renderMenuScores();
 showMenu();
 </script>
